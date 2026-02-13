@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.johnreicabunas.clockwise.domain.model.TimeZoneModel
+import com.johnreicabunas.clockwise.presentation.components.AdBanner
 import kotlinx.coroutines.delay
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDateTime
@@ -115,6 +116,9 @@ fun Homescreen(
                     containerColor = Color(0xFFF5F6FA)
                 )
             )
+        },
+        bottomBar = {
+            AdBanner()
         }
     ) { padding ->
 
