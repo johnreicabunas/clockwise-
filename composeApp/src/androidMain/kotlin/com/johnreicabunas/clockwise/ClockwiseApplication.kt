@@ -3,6 +3,7 @@ package com.johnreicabunas.clockwise
 import android.app.Application
 import com.google.android.gms.ads.MobileAds
 import com.johnreicabunas.clockwise.di.appModule
+import com.johnreicabunas.clockwise.di.platformModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
@@ -15,7 +16,7 @@ class ClockwiseApplication: Application() {
 
         startKoin {
             androidContext(this@ClockwiseApplication)
-            modules(appModule)
+            modules(appModule, platformModule())
         }
     }
 }
