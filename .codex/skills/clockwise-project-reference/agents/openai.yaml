@@ -1,0 +1,4 @@
+interface:
+  display_name: "Clockwise Project Reference"
+  short_description: "Coding rules for the Clockwise KMP app"
+  default_prompt: "Use $clockwise-project-reference to guide coding work in the Clockwise Kotlin Multiplatform Compose app."

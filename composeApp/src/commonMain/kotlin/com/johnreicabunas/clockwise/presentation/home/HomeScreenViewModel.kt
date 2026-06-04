@@ -30,6 +30,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.random.Random
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 
 class HomeScreenViewModel(
     private val getTimeZonesUseCase: GetTimeZonesUseCase,
@@ -262,6 +263,12 @@ class HomeScreenViewModel(
         )
         val instant = finalResolution.instant ?: return setEditorError("Unable to resolve this schedule time.")
         val now = Clock.System.now()
+        val isOneTimeSchedule = editor.type == ScheduledItemType.MEETING_REMINDER ||
+            editor.repeatFrequency == RepeatFrequency.NONE
+        if (isOneTimeSchedule && instant - editor.reminderOffsetMinutes.minutes <= now) {
+            return setEditorError("Choose a future time for this alert.")
+        }
+
         val id = editor.itemId ?: newId()
         val createdAt = editor.createdAt ?: now.toString()
         val repeatRule = RepeatRule(
@@ -288,7 +295,7 @@ class HomeScreenViewModel(
         val item = if (repeatRule.frequency == RepeatFrequency.NONE) {
             baseItem
         } else {
-            val next = nextOccurrenceAfter(baseItem, now) ?: instant
+            val next = nextOccurrenceAfter(baseItem, now + editor.reminderOffsetMinutes.minutes) ?: instant
             baseItem.copy(resolvedInstant = next.toString())
         }
 

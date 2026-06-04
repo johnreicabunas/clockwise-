@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.johnreicabunas.clockwise.MainActivity
@@ -38,7 +39,9 @@ class ScheduleAlarmReceiver : BroadcastReceiver() {
             ?: return
 
         if (item.repeatRule.frequency != RepeatFrequency.NONE) {
-            val next = nextOccurrenceAfter(item, Clock.System.now() + 1.minutes) ?: return
+            val currentEventInstant = runCatching { kotlin.time.Instant.parse(item.resolvedInstant) }
+                .getOrDefault(Clock.System.now())
+            val next = nextOccurrenceAfter(item, currentEventInstant + 1.minutes) ?: return
             val nextItem = item.copy(resolvedInstant = next.toString())
             runBlocking {
                 AndroidAlertScheduler(context).schedule(nextItem, nextItem.notificationBody())
@@ -74,6 +77,9 @@ class ScheduleAlarmReceiver : BroadcastReceiver() {
             .setContentIntent(contentIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
+            .setVibrate(longArrayOf(0, 500, 250, 500))
             .build()
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -81,7 +87,8 @@ class ScheduleAlarmReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        const val CHANNEL_ID = "clockwise_scheduled_items"
+        // Channel settings are immutable after creation, so use a new ID to replace the old silent channel.
+        const val CHANNEL_ID = "clockwise_scheduled_items_audible_v2"
         const val EXTRA_ITEM_ID = "item_id"
         const val EXTRA_TITLE = "title"
         const val EXTRA_BODY = "body"

@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -61,6 +62,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -84,6 +86,7 @@ import kotlinx.datetime.offsetAt
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.math.abs
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -118,34 +121,39 @@ fun Homescreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFFF5F6FA),
+        containerColor = ClockwiseBackground,
         topBar = {
             TopAppBar(
                 title = {
                     Column {
                         Text(
-                            "World Clock",
+                            "Clockwise",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
+                            fontSize = 20.sp,
+                            color = ClockwiseText
                         )
                         Text(
                             if (state.mode == HomeMode.SCHEDULES) {
-                                "Timezone-aligned alarms and reminders"
+                                "Timezone-aligned alerts"
                             } else {
-                                "Compare timezones worldwide"
+                                "World clocks and meeting reminders"
                             },
                             fontSize = 12.sp,
-                            color = Color.Gray
+                            color = ClockwiseMuted
                         )
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.startCreate(ScheduledItemType.ALARM) }) {
-                        Icon(Icons.Default.Add, contentDescription = "Create alarm or meeting reminder")
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Create alarm or meeting reminder",
+                            tint = ClockwiseCoral
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFF5F6FA)
+                    containerColor = ClockwiseBackground
                 )
             )
         },
@@ -156,7 +164,7 @@ fun Homescreen(
             if (state.mode == HomeMode.CLOCKS || state.mode == HomeMode.SCHEDULES) {
                 FloatingActionButton(
                     onClick = { viewModel.startCreate(ScheduledItemType.ALARM) },
-                    containerColor = Color(0xFF5B5FC7),
+                    containerColor = ClockwiseCoral,
                     contentColor = Color.White
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Create scheduled item")
@@ -170,6 +178,8 @@ fun Homescreen(
                 searchQuery = searchQuery,
                 onSearchQueryChange = { searchQuery = it },
                 filteredZones = filteredZones,
+                isLoading = state.isLoading,
+                error = state.error,
                 expandedZone = state.expandedZone,
                 deviceZone = deviceZone,
                 now = now,
@@ -228,6 +238,8 @@ private fun ClockListContent(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     filteredZones: List<TimeZoneModel>,
+    isLoading: Boolean,
+    error: String?,
     expandedZone: String?,
     deviceZone: TimeZone,
     now: Instant,
@@ -238,61 +250,87 @@ private fun ClockListContent(
     onSetAlarm: (TimeZoneModel) -> Unit,
     onCreateMeeting: (TimeZoneModel) -> Unit
 ) {
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(padding)
-            .padding(16.dp)
+            .background(ClockwiseBackground)
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 88.dp)
     ) {
-        ModeSwitcher(
-            selected = HomeMode.CLOCKS,
-            scheduleCount = scheduleCount,
-            onClockList = onClockList,
-            onScheduleList = onScheduleList
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 20.dp),
-            placeholder = {
-                Text("Search city or country...", color = Color.Gray)
-            },
-            leadingIcon = {
-                Icon(Icons.Default.Search, null, tint = Color.Gray)
-            },
-            shape = RoundedCornerShape(28.dp),
-            singleLine = true,
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFEDEFF5),
-                unfocusedContainerColor = Color(0xFFEDEFF5),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                cursorColor = Color(0xFF5B5FC7)
+        item {
+            ModeSwitcher(
+                selected = HomeMode.CLOCKS,
+                scheduleCount = scheduleCount,
+                onClockList = onClockList,
+                onScheduleList = onScheduleList
             )
-        )
+        }
 
-        HeaderSection(deviceZone, now)
+        item {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 8.dp),
+                placeholder = {
+                    Text("Search city or country...", color = ClockwiseMuted)
+                },
+                leadingIcon = {
+                    Icon(Icons.Default.Search, null, tint = ClockwiseMuted)
+                },
+                shape = RoundedCornerShape(28.dp),
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = ClockwiseText,
+                    unfocusedTextColor = ClockwiseText,
+                    focusedContainerColor = ClockwiseSurface,
+                    unfocusedContainerColor = ClockwiseSurface,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    cursorColor = ClockwiseCoral
+                )
+            )
+        }
 
-        Spacer(Modifier.height(16.dp))
+        item {
+            HeaderSection(deviceZone, now)
+        }
 
-        Text(
-            "${filteredZones.size} TIMEZONES",
-            fontSize = 11.sp,
-            color = Color.Gray
-        )
+        item {
+            Text(
+                "${filteredZones.size} TIMEZONES",
+                fontSize = 11.sp,
+                color = ClockwiseMuted,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
 
-        Spacer(Modifier.height(12.dp))
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(bottom = 88.dp)
-        ) {
-            items(filteredZones) { zone ->
+        when {
+            error != null -> item {
+                StatusCard(
+                    title = "Timezones unavailable",
+                    body = "Close and reopen Clockwise, then try again."
+                )
+            }
+            isLoading && filteredZones.isEmpty() -> item {
+                StatusCard(
+                    title = "Loading timezones",
+                    body = "Preparing world clocks for your device."
+                )
+            }
+            filteredZones.isEmpty() -> item {
+                StatusCard(
+                    title = "No matching timezones",
+                    body = "Try a city, country, or timezone ID."
+                )
+            }
+            else -> items(
+                items = filteredZones,
+                key = { it.zoneId }
+            ) { zone ->
                 WorldClockItem(
                     timeZone = zone,
                     now = now,
@@ -324,6 +362,7 @@ private fun ScheduleListContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(padding)
+            .background(ClockwiseBackground)
             .padding(16.dp)
     ) {
         ModeSwitcher(
@@ -336,12 +375,18 @@ private fun ScheduleListContent(
         Spacer(Modifier.height(16.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onCreateAlarm) {
+            Button(
+                onClick = onCreateAlarm,
+                colors = ButtonDefaults.buttonColors(containerColor = ClockwiseCoral)
+            ) {
                 Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(8.dp))
                 Text("Alarm")
             }
-            OutlinedButton(onClick = onCreateMeeting) {
+            OutlinedButton(
+                onClick = onCreateMeeting,
+                border = BorderStroke(1.dp, ClockwiseViolet)
+            ) {
                 Icon(Icons.Default.Event, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(8.dp))
                 Text("Meeting")
@@ -354,17 +399,21 @@ private fun ScheduleListContent(
             Card(
                 shape = RoundedCornerShape(20.dp),
                 elevation = CardDefaults.cardElevation(0.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = ClockwiseSurface),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier.padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("No alarms or meeting reminders yet.", fontWeight = FontWeight.Bold)
+                    Text(
+                        "No alarms or meeting reminders yet.",
+                        fontWeight = FontWeight.Bold,
+                        color = ClockwiseText
+                    )
                     Text(
                         "Create one from a timezone card or the buttons above.",
-                        color = Color.Gray,
+                        color = ClockwiseMuted,
                         fontSize = 13.sp
                     )
                 }
@@ -433,6 +482,7 @@ private fun ScheduleEditorContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(padding)
+            .background(ClockwiseBackground)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
         contentPadding = PaddingValues(bottom = 96.dp)
@@ -447,13 +497,30 @@ private fun ScheduleEditorContent(
                     Text(
                         if (editor.itemId == null) "Create schedule" else "Edit schedule",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp
+                        fontSize = 22.sp,
+                        color = ClockwiseText
                     )
-                    Text("Timezone-aligned alert", color = Color.Gray, fontSize = 13.sp)
+                    Text("Timezone-aligned alert", color = ClockwiseMuted, fontSize = 13.sp)
                 }
                 TextButton(onClick = onClose) {
-                    Text("Cancel")
+                    Text("Cancel", color = ClockwiseCoral)
                 }
+            }
+        }
+
+        item {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                ClockFace(
+                    hour = targetLocalDateTime?.hour ?: 0,
+                    minute = targetLocalDateTime?.minute ?: 0,
+                    label = targetLocalDateTime?.formatTime().orEmpty(),
+                    subtitle = zoneName.uppercase(),
+                    size = 250.dp,
+                    accent = if (editor.type == ScheduledItemType.ALARM) ClockwiseCoral else ClockwiseViolet
+                )
             }
         }
 
@@ -478,14 +545,15 @@ private fun ScheduleEditorContent(
                 onValueChange = onTitleChange,
                 label = { Text("Title") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = darkTextFieldColors()
             )
         }
 
         item {
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = ClockwiseSurface),
                 elevation = CardDefaults.cardElevation(0.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -498,14 +566,27 @@ private fun ScheduleEditorContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text("Target timezone", color = Color.Gray, fontSize = 12.sp)
-                        Text(zoneName, fontWeight = FontWeight.Bold)
-                        Text(editor.targetZoneId, color = Color.Gray, fontSize = 12.sp)
+                    Column(Modifier.weight(1f)) {
+                        Text("Target timezone", color = ClockwiseMuted, fontSize = 12.sp)
+                        Text(
+                            zoneName,
+                            fontWeight = FontWeight.Bold,
+                            color = ClockwiseText,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            editor.targetZoneId,
+                            color = ClockwiseMuted,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
+                    Spacer(Modifier.size(12.dp))
                     Text(
                         targetZone?.let { "UTC${formatUtcOffset(it, Clock.System.now())}" }.orEmpty(),
-                        color = Color(0xFF5B5FC7),
+                        color = ClockwiseCyan,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -520,7 +601,8 @@ private fun ScheduleEditorContent(
                     label = { Text("Target date") },
                     placeholder = { Text("YYYY-MM-DD") },
                     singleLine = true,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    colors = darkTextFieldColors()
                 )
                 OutlinedTextField(
                     value = editor.targetTime,
@@ -528,7 +610,8 @@ private fun ScheduleEditorContent(
                     label = { Text("Target time") },
                     placeholder = { Text("HH:MM") },
                     singleLine = true,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    colors = darkTextFieldColors()
                 )
             }
         }
@@ -623,7 +706,8 @@ private fun ScheduleEditorContent(
         item {
             Button(
                 onClick = onSave,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = ClockwiseCoral)
             ) {
                 Text("Save")
             }
@@ -666,6 +750,7 @@ private fun TimeZonePickerContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(padding)
+            .background(ClockwiseBackground)
             .padding(16.dp)
     ) {
         Row(
@@ -673,12 +758,12 @@ private fun TimeZonePickerContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                Text("Choose timezone", fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                Text("Search by city, country, or zone ID", color = Color.Gray, fontSize = 13.sp)
+            Column(Modifier.weight(1f)) {
+                Text("Choose timezone", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = ClockwiseText)
+                Text("Search by city, country, or zone ID", color = ClockwiseMuted, fontSize = 13.sp)
             }
             TextButton(onClick = onBack) {
-                Text("Back")
+                Text("Back", color = ClockwiseCoral)
             }
         }
 
@@ -691,7 +776,8 @@ private fun TimeZonePickerContent(
             placeholder = { Text("Search timezone...") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             singleLine = true,
-            shape = RoundedCornerShape(24.dp)
+            shape = RoundedCornerShape(24.dp),
+            colors = darkTextFieldColors()
         )
 
         Spacer(Modifier.height(12.dp))
@@ -707,7 +793,7 @@ private fun TimeZonePickerContent(
                         .fillMaxWidth()
                         .clickable { onSelectZone(zone.zoneId) },
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = ClockwiseSurface),
                     elevation = CardDefaults.cardElevation(0.dp)
                 ) {
                     Row(
@@ -717,14 +803,32 @@ private fun TimeZonePickerContent(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
-                            Text(zone.name, fontWeight = FontWeight.Bold)
-                            Text(zone.country, color = Color.Gray, fontSize = 12.sp)
-                            Text(zone.zoneId, color = Color.Gray, fontSize = 11.sp)
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                zone.name,
+                                fontWeight = FontWeight.Bold,
+                                color = ClockwiseText,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                zone.country,
+                                color = ClockwiseMuted,
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                zone.zoneId,
+                                color = ClockwiseMuted,
+                                fontSize = 11.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                         Text(
                             tz?.let { "UTC${formatUtcOffset(it, now)}" }.orEmpty(),
-                            color = Color(0xFF5B5FC7),
+                            color = ClockwiseCyan,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -762,12 +866,18 @@ private fun ToggleButton(
     onClick: () -> Unit
 ) {
     if (selected) {
-        Button(onClick = onClick) {
+        Button(
+            onClick = onClick,
+            colors = ButtonDefaults.buttonColors(containerColor = ClockwiseCoral)
+        ) {
             Text(label, maxLines = 1)
         }
     } else {
-        OutlinedButton(onClick = onClick) {
-            Text(label, maxLines = 1)
+        OutlinedButton(
+            onClick = onClick,
+            border = BorderStroke(1.dp, ClockwiseSurfaceRaised)
+        ) {
+            Text(label, maxLines = 1, color = ClockwiseMuted)
         }
     }
 }
@@ -778,7 +888,7 @@ private fun OptionSection(
     content: @Composable () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, fontWeight = FontWeight.Bold)
+        Text(title, fontWeight = FontWeight.Bold, color = ClockwiseText)
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
@@ -791,6 +901,44 @@ private fun OptionSection(
 }
 
 @Composable
+private fun StatusCard(
+    title: String,
+    body: String
+) {
+    Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = ClockwiseSurface),
+        elevation = CardDefaults.cardElevation(0.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(title, fontWeight = FontWeight.Bold, color = ClockwiseText)
+            Text(body, color = ClockwiseMuted, fontSize = 13.sp)
+        }
+    }
+}
+
+@Composable
+private fun darkTextFieldColors() = TextFieldDefaults.colors(
+    focusedTextColor = ClockwiseText,
+    unfocusedTextColor = ClockwiseText,
+    focusedLabelColor = ClockwiseCoral,
+    unfocusedLabelColor = ClockwiseMuted,
+    focusedPlaceholderColor = ClockwiseMuted,
+    unfocusedPlaceholderColor = ClockwiseMuted,
+    focusedLeadingIconColor = ClockwiseMuted,
+    unfocusedLeadingIconColor = ClockwiseMuted,
+    focusedContainerColor = ClockwiseSurface,
+    unfocusedContainerColor = ClockwiseSurface,
+    focusedIndicatorColor = ClockwiseCoral,
+    unfocusedIndicatorColor = ClockwiseSurfaceRaised,
+    cursorColor = ClockwiseCoral
+)
+
+@Composable
 fun HeaderSection(
     deviceZone: TimeZone,
     now: Instant
@@ -799,68 +947,63 @@ fun HeaderSection(
     val deviceDate = deviceTime.formatDate()
 
     Card(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(32.dp),
         elevation = CardDefaults.cardElevation(0.dp),
+        colors = CardDefaults.cardColors(containerColor = ClockwiseSurface),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Box(
+        Column(
             modifier = Modifier
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            Color(0xFF1E2A47),
-                            Color(0xFF3E3C8F)
-                        )
-                    )
-                )
-                .padding(20.dp)
+                .fillMaxWidth()
+                .padding(vertical = 24.dp, horizontal = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Text(
+                "YOUR TIME",
+                fontSize = 11.sp,
+                color = ClockwiseMuted
+            )
+            Spacer(Modifier.height(14.dp))
+            ClockFace(
+                hour = deviceTime.hour,
+                minute = deviceTime.minute,
+                label = deviceTime.formatTime(),
+                subtitle = deviceZone.id.substringAfterLast("/").replace("_", " ").uppercase(),
+                size = 240.dp
+            )
+            Spacer(Modifier.height(18.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            painter = rememberVectorPainter(Icons.Default.AccessTime),
-                            contentDescription = null,
-                            tint = Color.Gray,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Text(
-                            "YOUR TIMEZONE",
-                            fontSize = 11.sp,
-                            color = Color.White.copy(.7f)
-                        )
-                    }
-
-                    Spacer(Modifier.height(4.dp))
-
                     Text(
                         deviceZone.id.substringAfterLast("/").replace("_", " "),
-                        fontSize = 22.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = ClockwiseText,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-
                     Text(
                         deviceDate,
                         fontSize = 13.sp,
-                        color = Color.White.copy(.85f)
+                        color = ClockwiseMuted
                     )
                 }
-
-                Text(
-                    deviceTime.formatTime(),
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = ClockwiseCoral.copy(alpha = 0.14f)
+                ) {
+                    Text(
+                        "LIVE",
+                        color = ClockwiseCoral,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                    )
+                }
             }
         }
     }
@@ -896,19 +1039,19 @@ fun WorldClockItem(
             ) { onClick() },
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isExpanded) 8.dp else 2.dp
+            defaultElevation = 0.dp
         ),
         colors = CardDefaults.cardColors(
             containerColor = if (isExpanded)
-                Color(0xFFF8F9FF) else Color.White
+                ClockwiseSurfaceRaised else ClockwiseSurface
         ),
         border = if (isExpanded) {
             BorderStroke(
                 1.dp,
                 Brush.horizontalGradient(
                     listOf(
-                        Color(0xFF5B5FC7).copy(alpha = 0.3f),
-                        Color(0xFF8A8ED9).copy(alpha = 0.3f)
+                        ClockwiseCoral.copy(alpha = 0.5f),
+                        ClockwiseViolet.copy(alpha = 0.5f)
                     )
                 )
             )
@@ -923,6 +1066,7 @@ fun WorldClockItem(
             ) {
 
                 Row(
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -931,8 +1075,8 @@ fun WorldClockItem(
                             .size(36.dp)
                             .background(
                                 if (isExpanded)
-                                    Color(0xFF5B5FC7).copy(alpha = 0.12f)
-                                else Color(0xFFEDEFF5),
+                                    ClockwiseCoral.copy(alpha = 0.14f)
+                                else ClockwiseSurfaceRaised,
                                 RoundedCornerShape(10.dp)
                             ),
                         contentAlignment = Alignment.Center
@@ -940,25 +1084,31 @@ fun WorldClockItem(
                         Icon(
                             painter = rememberVectorPainter(Icons.Default.AccessTime),
                             contentDescription = null,
-                            tint = if (isExpanded) Color(0xFF5B5FC7) else Color.Gray,
+                            tint = if (isExpanded) ClockwiseCoral else ClockwiseMuted,
                             modifier = Modifier.size(18.dp)
                         )
                     }
 
-                    Column {
+                    Column(Modifier.weight(1f)) {
                         Text(
                             timeZone.name,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
-                            color = if (isExpanded) Color(0xFF1E2A47) else Color.Black
+                            color = ClockwiseText,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             timeZone.country,
                             fontSize = 12.sp,
-                            color = if (isExpanded) Color(0xFF5B5FC7) else Color.Gray
+                            color = if (isExpanded) ClockwiseCoral else ClockwiseMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
+
+                Spacer(Modifier.size(12.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -969,7 +1119,7 @@ fun WorldClockItem(
                             cityTime.formatTime(),
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
-                            color = if (isExpanded) Color(0xFF5B5FC7) else Color.Black
+                            color = if (isExpanded) ClockwiseCoral else ClockwiseText
                         )
                         Text(
                             "UTC${formatUtcOffset(cityZone, now)}",
@@ -977,12 +1127,12 @@ fun WorldClockItem(
                             modifier = Modifier
                                 .background(
                                     if (isExpanded)
-                                        Color(0xFF5B5FC7).copy(alpha = 0.1f)
-                                    else Color(0xFFEDEFF5),
+                                        ClockwiseCoral.copy(alpha = 0.12f)
+                                    else ClockwiseSurfaceRaised,
                                     RoundedCornerShape(12.dp)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
-                            color = if (isExpanded) Color(0xFF5B5FC7) else Color.Gray
+                            color = if (isExpanded) ClockwiseCoral else ClockwiseMuted
                         )
                     }
                 }
@@ -998,8 +1148,8 @@ fun WorldClockItem(
                         .background(
                             Brush.horizontalGradient(
                                 listOf(
-                                    Color(0xFF5B5FC7).copy(alpha = 0.2f),
-                                    Color(0xFF8A8ED9).copy(alpha = 0.2f)
+                                    ClockwiseCoral.copy(alpha = 0.35f),
+                                    ClockwiseViolet.copy(alpha = 0.35f)
                                 )
                             )
                         )
@@ -1019,19 +1169,19 @@ fun WorldClockItem(
                         Icon(
                             painter = rememberVectorPainter(Icons.Default.Schedule),
                             contentDescription = null,
-                            tint = Color(0xFF5B5FC7),
+                            tint = ClockwiseCyan,
                             modifier = Modifier.size(18.dp)
                         )
                         Column {
                             Text(
                                 "Your Time",
                                 fontSize = 12.sp,
-                                color = Color.Gray
+                                color = ClockwiseMuted
                             )
                             Text(
                                 deviceTime.formatTime(),
                                 fontWeight = FontWeight.Bold,
-                                color = if (isExpanded) Color(0xFF1E2A47) else Color.Black
+                                color = ClockwiseText
                             )
                         }
                     }
@@ -1080,18 +1230,18 @@ fun WorldClockItem(
                             Text(
                                 timeZone.name,
                                 fontSize = 12.sp,
-                                color = Color.Gray
+                                color = ClockwiseMuted
                             )
                             Text(
                                 cityTime.formatTime(),
                                 fontWeight = FontWeight.Bold,
-                                color = if (isExpanded) Color(0xFF5B5FC7) else Color.Black
+                                color = ClockwiseCoral
                             )
                         }
                         Icon(
                             painter = rememberVectorPainter(Icons.Default.LocationOn),
                             contentDescription = null,
-                            tint = Color(0xFF5B5FC7),
+                            tint = ClockwiseCoral,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -1105,7 +1255,7 @@ fun WorldClockItem(
                     Text(
                         cityDate,
                         fontSize = 11.sp,
-                        color = Color.Gray,
+                        color = ClockwiseMuted,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
@@ -1113,12 +1263,18 @@ fun WorldClockItem(
                 Spacer(Modifier.height(12.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onSetAlarm) {
+                    OutlinedButton(
+                        onClick = onSetAlarm,
+                        border = BorderStroke(1.dp, ClockwiseCoral)
+                    ) {
                         Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.size(8.dp))
                         Text("Set alarm")
                     }
-                    OutlinedButton(onClick = onCreateMeeting) {
+                    OutlinedButton(
+                        onClick = onCreateMeeting,
+                        border = BorderStroke(1.dp, ClockwiseViolet)
+                    ) {
                         Icon(Icons.Default.Event, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.size(8.dp))
                         Text("Meeting")
@@ -1147,7 +1303,7 @@ private fun ScheduleListItem(
 
     Card(
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = ClockwiseSurface),
         elevation = CardDefaults.cardElevation(0.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -1161,12 +1317,16 @@ private fun ScheduleListItem(
                 verticalAlignment = Alignment.Top
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(item.title, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                    Text(typeLabel, color = Color(0xFF5B5FC7), fontSize = 12.sp)
+                    Text(item.title, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = ClockwiseText)
+                    Text(
+                        typeLabel,
+                        color = if (item.type == ScheduledItemType.ALARM) ClockwiseCoral else ClockwiseViolet,
+                        fontSize = 12.sp
+                    )
                 }
                 Text(
                     group,
-                    color = Color.Gray,
+                    color = ClockwiseMuted,
                     fontSize = 12.sp
                 )
             }
@@ -1177,23 +1337,24 @@ private fun ScheduleListItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("Target time", color = Color.Gray, fontSize = 12.sp)
+                    Text("Target time", color = ClockwiseMuted, fontSize = 12.sp)
                     Text(
                         targetLocal?.formatTime().orEmpty(),
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = ClockwiseText
                     )
-                    Text(zoneLabel, color = Color.Gray, fontSize = 12.sp)
+                    Text(zoneLabel, color = ClockwiseMuted, fontSize = 12.sp)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Your time", color = Color.Gray, fontSize = 12.sp)
+                    Text("Your time", color = ClockwiseMuted, fontSize = 12.sp)
                     Text(
                         deviceLocal?.formatTime().orEmpty(),
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF5B5FC7)
+                        color = ClockwiseCyan
                     )
                     Text(
                         deviceLocal?.formatDate().orEmpty(),
-                        color = Color.Gray,
+                        color = ClockwiseMuted,
                         fontSize = 12.sp
                     )
                 }
@@ -1206,15 +1367,15 @@ private fun ScheduleListItem(
             ) {
                 Text(
                     "${item.repeatRule.frequency.label()} • ${reminderLabel(item.reminderOffsetMinutes)}",
-                    color = Color.Gray,
+                    color = ClockwiseMuted,
                     fontSize = 12.sp
                 )
                 Row {
                     IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit ${item.title}")
+                        Icon(Icons.Default.Edit, contentDescription = "Edit ${item.title}", tint = ClockwiseMuted)
                     }
                     IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete ${item.title}")
+                        Icon(Icons.Default.Delete, contentDescription = "Delete ${item.title}", tint = ClockwiseCoral)
                     }
                 }
             }
@@ -1240,7 +1401,7 @@ private fun ConversionPreview(
 ) {
     Card(
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = ClockwiseSurface),
         elevation = CardDefaults.cardElevation(0.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -1248,37 +1409,37 @@ private fun ConversionPreview(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Conversion preview", fontWeight = FontWeight.Bold)
+            Text("Conversion preview", fontWeight = FontWeight.Bold, color = ClockwiseText)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text("Target time", color = Color.Gray, fontSize = 12.sp)
-                    Text(targetLocal?.formatTime().orEmpty(), fontWeight = FontWeight.Bold)
-                    Text("${targetLocal?.formatDate().orEmpty()}, $zoneName", color = Color.Gray, fontSize = 12.sp)
+                    Text("Target time", color = ClockwiseMuted, fontSize = 12.sp)
+                    Text(targetLocal?.formatTime().orEmpty(), fontWeight = FontWeight.Bold, color = ClockwiseText)
+                    Text("${targetLocal?.formatDate().orEmpty()}, $zoneName", color = ClockwiseMuted, fontSize = 12.sp)
                     Text(
                         if (targetZone != null && targetLocal != null) {
                             "UTC${formatUtcOffset(targetZone, targetLocal.toInstant(targetZone))}"
                         } else {
                             ""
                         },
-                        color = Color.Gray,
+                        color = ClockwiseMuted,
                         fontSize = 11.sp
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Your time", color = Color.Gray, fontSize = 12.sp)
-                    Text(deviceLocal?.formatTime().orEmpty(), fontWeight = FontWeight.Bold, color = Color(0xFF5B5FC7))
-                    Text(deviceLocal?.formatDate().orEmpty(), color = Color.Gray, fontSize = 12.sp)
+                    Text("Your time", color = ClockwiseMuted, fontSize = 12.sp)
+                    Text(deviceLocal?.formatTime().orEmpty(), fontWeight = FontWeight.Bold, color = ClockwiseCyan)
+                    Text(deviceLocal?.formatDate().orEmpty(), color = ClockwiseMuted, fontSize = 12.sp)
                     Text(
                         deviceLocal?.let { relativeDayLabel(it.date, targetLocal?.date ?: it.date) }.orEmpty(),
-                        color = Color.Gray,
+                        color = ClockwiseMuted,
                         fontSize = 11.sp
                     )
                     Text(
                         deviceLocal?.let { "UTC${formatUtcOffset(deviceZone, it.toInstant(deviceZone))}" }.orEmpty(),
-                        color = Color.Gray,
+                        color = ClockwiseMuted,
                         fontSize = 11.sp
                     )
                 }
@@ -1404,10 +1565,11 @@ fun LocalDateTime.formatDate(): String {
 
 fun formatUtcOffset(zone: TimeZone, instant: Instant): String {
     val totalSeconds = zone.offsetAt(instant).totalSeconds
-    val hours = totalSeconds / 3600
-    val minutes = (totalSeconds % 3600) / 60
-    return "%+03d:%02d".replace("%+03d", if (hours >= 0) "+$hours" else "$hours")
-        .replace("%02d", minutes.toString().padStart(2, '0'))
+    val sign = if (totalSeconds >= 0) "+" else "-"
+    val absoluteSeconds = abs(totalSeconds)
+    val hours = absoluteSeconds / 3600
+    val minutes = (absoluteSeconds % 3600) / 60
+    return "$sign${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}"
 }
 
 private fun RepeatFrequency.label(): String {

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 
 class ScheduledItemRepositoryImpl(
     private val storage: ScheduleStorage,
@@ -94,7 +95,7 @@ class ScheduledItemRepositoryImpl(
         if (repeatRule.frequency == RepeatFrequency.NONE) {
             return this
         }
-        val next = nextOccurrenceAfter(this, Clock.System.now()) ?: return this
+        val next = nextOccurrenceAfter(this, Clock.System.now() + reminderOffsetMinutes.minutes) ?: return this
         return copy(resolvedInstant = next.toString())
     }
 }

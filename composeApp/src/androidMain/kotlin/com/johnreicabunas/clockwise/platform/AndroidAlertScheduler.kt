@@ -6,11 +6,16 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.os.Build
+import com.johnreicabunas.clockwise.MainActivity
 import com.johnreicabunas.clockwise.domain.model.ScheduledItem
+import com.johnreicabunas.clockwise.domain.model.ScheduledItemType
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 class AndroidAlertScheduler(
@@ -20,7 +25,9 @@ class AndroidAlertScheduler(
     private val json = Json { encodeDefaults = true }
 
     override suspend fun schedule(item: ScheduledItem, body: String) {
-        val triggerAt = runCatching { Instant.parse(item.resolvedInstant).toEpochMilliseconds() }
+        val triggerAt = runCatching {
+            (Instant.parse(item.resolvedInstant) - item.reminderOffsetMinutes.minutes).toEpochMilliseconds()
+        }
             .getOrNull()
             ?: return
 
@@ -31,10 +38,21 @@ class AndroidAlertScheduler(
         ensureChannel()
         val pendingIntent = pendingIntentFor(item.id, item.title, body, json.encodeToString(item))
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
+        if (item.type == ScheduledItemType.ALARM) {
+            val showIntent = PendingIntent.getActivity(
+                context,
+                item.id.hashCode(),
+                Intent(context, MainActivity::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.setAlarmClock(
+                AlarmManager.AlarmClockInfo(triggerAt, showIntent),
+                pendingIntent
+            )
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
         } else {
-            alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
         }
     }
 
@@ -71,10 +89,18 @@ class AndroidAlertScheduler(
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel = NotificationChannel(
             ScheduleAlarmReceiver.CHANNEL_ID,
-            "Clockwise reminders",
+            "Clockwise alarms",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Timezone-aligned alarms and meeting reminders"
+            description = "Audible timezone-aligned alarms and meeting reminders"
+            enableVibration(true)
+            setSound(
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            )
         }
         manager.createNotificationChannel(channel)
     }
