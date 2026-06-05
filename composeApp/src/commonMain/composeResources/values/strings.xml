@@ -1,0 +1,15 @@
+<resources>
+    <string name="support_title">Support Clockwise</string>
+    <string name="support_intro">Clockwise is built and maintained independently. Your support helps fund improvements and keeps the app moving forward.</string>
+    <string name="support_coffee_title">Coffee</string>
+    <string name="support_coffee_body">A small thank-you donation.</string>
+    <string name="support_pizza_title">Pizza</string>
+    <string name="support_pizza_body">A medium donation for a productive evening.</string>
+    <string name="support_chicken_title">Chicken</string>
+    <string name="support_chicken_body">A large donation that makes a real difference.</string>
+    <string name="support_remove_ads_title">Remove ads</string>
+    <string name="support_remove_ads_body">A one-time purchase that permanently removes banner ads.</string>
+    <string name="support_ads_removed">Ads have been removed. Thank you for your support!</string>
+    <string name="support_not_available">Purchases are currently unavailable. Install the Android app through Google Play and try again.</string>
+    <string name="support_back">Back</string>
+</resources>

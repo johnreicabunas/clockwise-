@@ -6,6 +6,7 @@ import com.johnreicabunas.clockwise.domain.repository.ScheduledItemRepository
 import com.johnreicabunas.clockwise.domain.repository.TimeZoneRepository
 import com.johnreicabunas.clockwise.domain.usecase.GetTimeZonesUseCase
 import com.johnreicabunas.clockwise.presentation.home.HomeScreenViewModel
+import com.johnreicabunas.clockwise.presentation.support.SupportScreenViewModel
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.bind
@@ -19,4 +20,5 @@ val appModule = module {
     factory { GetTimeZonesUseCase(get()) }
 
     viewModelOf(::HomeScreenViewModel)
+    viewModelOf(::SupportScreenViewModel)
 }

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -77,6 +78,7 @@ import com.johnreicabunas.clockwise.domain.time.ScheduleResolutionStatus
 import com.johnreicabunas.clockwise.domain.time.relativeDayLabel
 import com.johnreicabunas.clockwise.domain.time.resolveScheduleLocalDateTime
 import com.johnreicabunas.clockwise.presentation.components.AdBanner
+import com.johnreicabunas.clockwise.presentation.support.SupportScreenRoot
 import kotlinx.coroutines.delay
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDateTime
@@ -133,10 +135,10 @@ fun Homescreen(
                             color = ClockwiseText
                         )
                         Text(
-                            if (state.mode == HomeMode.SCHEDULES) {
-                                "Timezone-aligned alerts"
-                            } else {
-                                "World clocks and meeting reminders"
+                            when (state.mode) {
+                                HomeMode.SCHEDULES -> "Timezone-aligned alerts"
+                                HomeMode.SUPPORT -> "Support development and remove ads"
+                                else -> "World clocks and meeting reminders"
                             },
                             fontSize = 12.sp,
                             color = ClockwiseMuted
@@ -144,12 +146,21 @@ fun Homescreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.startCreate(ScheduledItemType.ALARM) }) {
+                    IconButton(onClick = viewModel::showSupport) {
                         Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Create alarm or meeting reminder",
-                            tint = ClockwiseCoral
+                            Icons.Default.Favorite,
+                            contentDescription = "Support Clockwise",
+                            tint = ClockwiseViolet
                         )
+                    }
+                    if (state.mode != HomeMode.SUPPORT) {
+                        IconButton(onClick = { viewModel.startCreate(ScheduledItemType.ALARM) }) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Create alarm or meeting reminder",
+                                tint = ClockwiseCoral
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -158,7 +169,9 @@ fun Homescreen(
             )
         },
         bottomBar = {
-            AdBanner()
+            if (!state.isAdsRemoved && state.mode != HomeMode.SUPPORT) {
+                AdBanner()
+            }
         },
         floatingActionButton = {
             if (state.mode == HomeMode.CLOCKS || state.mode == HomeMode.SCHEDULES) {
@@ -201,6 +214,10 @@ fun Homescreen(
                 onCreateMeeting = { viewModel.startCreate(ScheduledItemType.MEETING_REMINDER) },
                 onEdit = viewModel::startEdit,
                 onDelete = { viewModel.deleteSchedule(it.id) }
+            )
+            HomeMode.SUPPORT -> SupportScreenRoot(
+                padding = padding,
+                onBack = viewModel::showClockList
             )
             HomeMode.EDITOR -> ScheduleEditorContent(
                 padding = padding,

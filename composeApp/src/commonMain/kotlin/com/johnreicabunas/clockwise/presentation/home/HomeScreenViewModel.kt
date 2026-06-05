@@ -14,6 +14,7 @@ import com.johnreicabunas.clockwise.domain.model.ScheduledItemType
 import com.johnreicabunas.clockwise.domain.model.SyncStatus
 import com.johnreicabunas.clockwise.domain.model.WorldClockState
 import com.johnreicabunas.clockwise.domain.repository.ScheduledItemRepository
+import com.johnreicabunas.clockwise.domain.repository.BillingRepository
 import com.johnreicabunas.clockwise.domain.time.ScheduleResolutionStatus
 import com.johnreicabunas.clockwise.domain.time.nextOccurrenceAfter
 import com.johnreicabunas.clockwise.domain.time.resolveScheduleLocalDateTime
@@ -34,7 +35,8 @@ import kotlin.time.Duration.Companion.minutes
 
 class HomeScreenViewModel(
     private val getTimeZonesUseCase: GetTimeZonesUseCase,
-    private val scheduledItemRepository: ScheduledItemRepository
+    private val scheduledItemRepository: ScheduledItemRepository,
+    private val billingRepository: BillingRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(WorldClockState())
@@ -44,6 +46,13 @@ class HomeScreenViewModel(
         loadZones()
         loadSchedules()
         observeSchedules()
+        observeBilling()
+    }
+
+    private fun observeBilling() {
+        billingRepository.state.onEach { billingState ->
+            _state.update { it.copy(isAdsRemoved = billingState.isAdsRemoved) }
+        }.launchIn(viewModelScope)
     }
 
     private fun loadZones() {
@@ -102,6 +111,10 @@ class HomeScreenViewModel(
 
     fun showScheduleList() {
         _state.update { it.copy(mode = HomeMode.SCHEDULES, editorError = null) }
+    }
+
+    fun showSupport() {
+        _state.update { it.copy(mode = HomeMode.SUPPORT, editorError = null) }
     }
 
     fun startCreate(type: ScheduledItemType, zoneId: String? = null) {

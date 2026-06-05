@@ -36,6 +36,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.core.ktx)
             implementation(libs.play.services.ads)
+            implementation(libs.play.billing)
             implementation(libs.koin.android)
         }
         commonMain.dependencies {
@@ -78,7 +79,7 @@ android {
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 12
-        versionName = "1.1.8"
+        versionName = "1.1.9"
     }
     packaging {
         resources {
