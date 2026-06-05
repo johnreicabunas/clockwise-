@@ -969,7 +969,9 @@ fun HeaderSection(
                 minute = deviceTime.minute,
                 label = deviceTime.formatTime(),
                 subtitle = deviceZone.id.substringAfterLast("/").replace("_", " ").uppercase(),
-                size = 240.dp
+                size = 240.dp,
+                labelFontSize = 25.sp,
+                labelVerticalOffset = (-42).dp
             )
             Spacer(Modifier.height(18.dp))
             Row(

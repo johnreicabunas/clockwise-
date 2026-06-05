@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.PI
@@ -43,7 +44,9 @@ internal fun ClockFace(
     subtitle: String,
     modifier: Modifier = Modifier,
     size: Dp = 230.dp,
-    accent: Color = ClockwiseCoral
+    accent: Color = ClockwiseCoral,
+    labelFontSize: TextUnit = 28.sp,
+    labelVerticalOffset: Dp = (-22).dp
 ) {
     Box(
         modifier = modifier
@@ -99,10 +102,10 @@ internal fun ClockFace(
             text = label,
             color = ClockwiseText,
             fontWeight = FontWeight.Bold,
-            fontSize = 28.sp,
+            fontSize = labelFontSize,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = (-22).dp),
+                .offset(y = labelVerticalOffset),
             maxLines = 1
         )
         Text(
