@@ -1,6 +1,8 @@
 package com.johnreicabunas.clockwise.di
 
 import com.johnreicabunas.clockwise.data.local.AndroidScheduleStorage
+import com.johnreicabunas.clockwise.data.local.AndroidSettingsStorage
+import com.johnreicabunas.clockwise.data.local.SettingsStorage
 import com.johnreicabunas.clockwise.data.local.ScheduleStorage
 import com.johnreicabunas.clockwise.data.repository.GooglePlayBillingRepository
 import com.johnreicabunas.clockwise.domain.repository.BillingRepository
@@ -11,6 +13,7 @@ import org.koin.dsl.module
 
 actual fun platformModule() = module {
     single<ScheduleStorage> { AndroidScheduleStorage(androidContext()) }
+    single<SettingsStorage> { AndroidSettingsStorage(androidContext()) }
     single<AlertScheduler> { AndroidAlertScheduler(androidContext()) }
     single { GooglePlayBillingRepository(androidContext()) }
     single<BillingRepository> { get<GooglePlayBillingRepository>() }

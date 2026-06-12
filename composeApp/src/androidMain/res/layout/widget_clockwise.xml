@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/widget_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CLOCKWISE"
+        android:textColor="#9C99A8"
+        android:textSize="10sp"
+        android:letterSpacing="0.12"
+        android:textStyle="bold" />
+
+    <TextClock
+        android:id="@+id/widget_clock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:format12Hour="hh:mm a"
+        android:format24Hour="HH:mm"
+        android:textColor="#F8F7FB"
+        android:textSize="32sp"
+        android:textStyle="bold" />
+
+    <TextClock
+        android:id="@+id/widget_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:format12Hour="EEEE, MMMM d"
+        android:format24Hour="EEEE, MMMM d"
+        android:textColor="#9C99A8"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widget_next_schedule"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:text=""
+        android:textColor="#FF5A72"
+        android:textSize="12sp" />
+</LinearLayout>

@@ -5,6 +5,7 @@ data class BillingState(
     val isLoading: Boolean = true,
     val isAvailable: Boolean = false,
     val isAdsRemoved: Boolean = false,
+    val isProUnlocked: Boolean = false,
     val message: String? = null
 )
 
@@ -18,7 +19,8 @@ object SupportProductIds {
     const val PIZZA = "support_pizza"
     const val CHICKEN = "support_chicken"
     const val REMOVE_ADS = "remove_ads"
+    const val PRO = "clockwise_pro"
 
-    val all = listOf(COFFEE, PIZZA, CHICKEN, REMOVE_ADS)
+    val all = listOf(PRO, COFFEE, PIZZA, CHICKEN, REMOVE_ADS)
     val donations = setOf(COFFEE, PIZZA, CHICKEN)
 }

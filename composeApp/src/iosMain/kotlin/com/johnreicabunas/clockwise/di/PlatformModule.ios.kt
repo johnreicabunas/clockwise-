@@ -1,6 +1,8 @@
 package com.johnreicabunas.clockwise.di
 
 import com.johnreicabunas.clockwise.data.local.IosScheduleStorage
+import com.johnreicabunas.clockwise.data.local.IosSettingsStorage
+import com.johnreicabunas.clockwise.data.local.SettingsStorage
 import com.johnreicabunas.clockwise.data.local.ScheduleStorage
 import com.johnreicabunas.clockwise.data.repository.UnavailableBillingRepository
 import com.johnreicabunas.clockwise.domain.repository.BillingRepository
@@ -10,6 +12,7 @@ import org.koin.dsl.module
 
 actual fun platformModule() = module {
     single<ScheduleStorage> { IosScheduleStorage() }
+    single<SettingsStorage> { IosSettingsStorage() }
     single<AlertScheduler> { NoOpAlertScheduler() }
     single<BillingRepository> { UnavailableBillingRepository() }
 }

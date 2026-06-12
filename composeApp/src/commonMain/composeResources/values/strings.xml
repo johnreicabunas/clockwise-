@@ -1,5 +1,8 @@
 <resources>
     <string name="support_title">Support Clockwise</string>
+    <string name="support_pro_title">Clockwise Pro</string>
+    <string name="support_pro_body">One-time purchase. Unlimited alarms and reminders, Meeting Time Finder, Time Travel, premium themes and clock faces, the home-screen widget — and all ads removed, forever.</string>
+    <string name="support_pro_unlocked">Clockwise Pro is unlocked. Thank you for your support!</string>
     <string name="support_intro">Clockwise is built and maintained independently. Your support helps fund improvements and keeps the app moving forward.</string>
     <string name="support_coffee_title">Coffee</string>
     <string name="support_coffee_body">A small thank-you donation.</string>

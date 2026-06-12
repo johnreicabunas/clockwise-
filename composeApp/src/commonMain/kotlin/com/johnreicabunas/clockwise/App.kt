@@ -1,26 +1,24 @@
 package com.johnreicabunas.clockwise
 
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
+import com.johnreicabunas.clockwise.data.repository.AppearanceRepository
 import com.johnreicabunas.clockwise.presentation.home.Homescreen
+import com.johnreicabunas.clockwise.presentation.theme.ClockFaceStyle
+import com.johnreicabunas.clockwise.presentation.theme.ClockwiseTheme
+import com.johnreicabunas.clockwise.presentation.theme.paletteFor
+import org.koin.compose.koinInject
 
 @Composable
 @Preview
 fun App() {
-    MaterialTheme(
-        colorScheme = darkColorScheme(
-            primary = Color(0xFFFF5A72),
-            secondary = Color(0xFF8D7CFF),
-            tertiary = Color(0xFF55D6E8),
-            background = Color(0xFF121116),
-            surface = Color(0xFF1B1A21),
-            onPrimary = Color.White,
-            onBackground = Color(0xFFF8F7FB),
-            onSurface = Color(0xFFF8F7FB)
-        )
+    val appearanceRepository = koinInject<AppearanceRepository>()
+    val appearance by appearanceRepository.settings.collectAsState()
+    ClockwiseTheme(
+        palette = paletteFor(appearance.paletteId),
+        clockFaceStyle = ClockFaceStyle.fromId(appearance.clockFaceId)
     ) {
         Homescreen()
     }

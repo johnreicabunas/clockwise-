@@ -21,6 +21,7 @@ import com.johnreicabunas.clockwise.domain.model.BillingState
 import com.johnreicabunas.clockwise.domain.model.SupportProduct
 import com.johnreicabunas.clockwise.domain.model.SupportProductIds
 import com.johnreicabunas.clockwise.domain.repository.BillingRepository
+import com.johnreicabunas.clockwise.platform.ClockwiseWidgetProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -37,7 +38,10 @@ class GooglePlayBillingRepository(
     private var activityReference = WeakReference<Activity>(null)
 
     private val _state = MutableStateFlow(
-        BillingState(isAdsRemoved = preferences.getBoolean(KEY_ADS_REMOVED, false))
+        BillingState(
+            isAdsRemoved = preferences.getBoolean(KEY_ADS_REMOVED, false),
+            isProUnlocked = preferences.getBoolean(KEY_PRO_UNLOCKED, false)
+        )
     )
     override val state = _state.asStateFlow()
 
@@ -193,7 +197,12 @@ class GooglePlayBillingRepository(
                 it.purchaseState == Purchase.PurchaseState.PURCHASED &&
                     SupportProductIds.REMOVE_ADS in it.products
             }
+            val hasPro = purchases.any {
+                it.purchaseState == Purchase.PurchaseState.PURCHASED &&
+                    SupportProductIds.PRO in it.products
+            }
             setAdsRemoved(hasRemoveAds)
+            setProUnlocked(hasPro)
             purchases.forEach(::processPurchase)
         }
     }
@@ -205,6 +214,7 @@ class GooglePlayBillingRepository(
             }
             Purchase.PurchaseState.PURCHASED -> {
                 when {
+                    SupportProductIds.PRO in purchase.products -> handlePro(purchase)
                     SupportProductIds.REMOVE_ADS in purchase.products -> handleRemoveAds(purchase)
                     purchase.products.any(SupportProductIds.donations::contains) -> consumeDonation(purchase)
                 }
@@ -246,6 +256,31 @@ class GooglePlayBillingRepository(
         }
     }
 
+    private fun handlePro(purchase: Purchase) {
+        setProUnlocked(true)
+        if (purchase.isAcknowledged) {
+            _state.update { it.copy(message = "Clockwise Pro is unlocked. Thank you for your support!") }
+            return
+        }
+        billingClient.acknowledgePurchase(
+            AcknowledgePurchaseParams.newBuilder()
+                .setPurchaseToken(purchase.purchaseToken)
+                .build()
+        ) { result ->
+            if (result.responseCode == BillingResponseCode.OK) {
+                _state.update { it.copy(message = "Clockwise Pro is unlocked. Thank you for your support!") }
+            } else {
+                showBillingError(result)
+            }
+        }
+    }
+
+    private fun setProUnlocked(unlocked: Boolean) {
+        preferences.edit().putBoolean(KEY_PRO_UNLOCKED, unlocked).apply()
+        _state.update { it.copy(isProUnlocked = unlocked) }
+        ClockwiseWidgetProvider.refresh(appContext)
+    }
+
     private fun setAdsRemoved(removed: Boolean) {
         preferences.edit().putBoolean(KEY_ADS_REMOVED, removed).apply()
         _state.update { it.copy(isAdsRemoved = removed) }
@@ -273,5 +308,6 @@ class GooglePlayBillingRepository(
         const val TAG = "ClockwiseBilling"
         const val PREFERENCES_NAME = "clockwise_billing"
         const val KEY_ADS_REMOVED = "ads_removed"
+        const val KEY_PRO_UNLOCKED = "pro_unlocked"
     }
 }

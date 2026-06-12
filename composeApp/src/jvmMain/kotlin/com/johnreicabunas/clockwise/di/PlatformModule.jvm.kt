@@ -1,6 +1,8 @@
 package com.johnreicabunas.clockwise.di
 
 import com.johnreicabunas.clockwise.data.local.JvmScheduleStorage
+import com.johnreicabunas.clockwise.data.local.JvmSettingsStorage
+import com.johnreicabunas.clockwise.data.local.SettingsStorage
 import com.johnreicabunas.clockwise.data.local.ScheduleStorage
 import com.johnreicabunas.clockwise.data.repository.UnavailableBillingRepository
 import com.johnreicabunas.clockwise.domain.repository.BillingRepository
@@ -10,6 +12,7 @@ import org.koin.dsl.module
 
 actual fun platformModule() = module {
     single<ScheduleStorage> { JvmScheduleStorage() }
+    single<SettingsStorage> { JvmSettingsStorage() }
     single<AlertScheduler> { NoOpAlertScheduler() }
     single<BillingRepository> { UnavailableBillingRepository() }
 }

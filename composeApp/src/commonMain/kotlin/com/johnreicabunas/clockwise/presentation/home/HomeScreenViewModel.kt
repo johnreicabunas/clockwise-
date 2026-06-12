@@ -3,6 +3,7 @@ package com.johnreicabunas.clockwise.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.johnreicabunas.clockwise.common.Response
+import com.johnreicabunas.clockwise.data.repository.AppearanceRepository
 import com.johnreicabunas.clockwise.domain.model.DstResolution
 import com.johnreicabunas.clockwise.domain.model.HomeMode
 import com.johnreicabunas.clockwise.domain.model.RepeatFrequency
@@ -36,11 +37,14 @@ import kotlin.time.Duration.Companion.minutes
 class HomeScreenViewModel(
     private val getTimeZonesUseCase: GetTimeZonesUseCase,
     private val scheduledItemRepository: ScheduledItemRepository,
-    private val billingRepository: BillingRepository
+    private val billingRepository: BillingRepository,
+    private val appearanceRepository: AppearanceRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(WorldClockState())
     val state = _state.asStateFlow()
+
+    val appearance = appearanceRepository.settings
 
     init {
         loadZones()
@@ -51,7 +55,12 @@ class HomeScreenViewModel(
 
     private fun observeBilling() {
         billingRepository.state.onEach { billingState ->
-            _state.update { it.copy(isAdsRemoved = billingState.isAdsRemoved) }
+            _state.update {
+                it.copy(
+                    isAdsRemoved = billingState.isAdsRemoved || billingState.isProUnlocked,
+                    isProUnlocked = billingState.isProUnlocked
+                )
+            }
         }.launchIn(viewModelScope)
     }
 
@@ -115,6 +124,40 @@ class HomeScreenViewModel(
 
     fun showSupport() {
         _state.update { it.copy(mode = HomeMode.SUPPORT, editorError = null) }
+    }
+
+    fun showPlanner() {
+        _state.update { it.copy(mode = HomeMode.PLANNER, editorError = null) }
+    }
+
+    fun showPersonalize() {
+        _state.update { it.copy(mode = HomeMode.PERSONALIZE, editorError = null) }
+    }
+
+    fun setPalette(paletteId: String) {
+        appearanceRepository.setPalette(paletteId)
+    }
+
+    fun setClockFace(clockFaceId: String) {
+        appearanceRepository.setClockFace(clockFaceId)
+    }
+
+    /** Opens the meeting editor prefilled with a slot picked in the planner (device-zone local time). */
+    fun startCreateMeetingAt(dateTime: LocalDateTime) {
+        val deviceZone = TimeZone.currentSystemDefault()
+        _state.update {
+            it.copy(
+                mode = HomeMode.EDITOR,
+                editorError = null,
+                editor = ScheduleEditorState(
+                    type = ScheduledItemType.MEETING_REMINDER,
+                    title = "Meeting reminder",
+                    targetZoneId = deviceZone.id,
+                    targetDate = dateTime.date.toString(),
+                    targetTime = dateTime.toFormTime()
+                )
+            )
+        }
     }
 
     fun startCreate(type: ScheduledItemType, zoneId: String? = null) {
@@ -230,6 +273,14 @@ class HomeScreenViewModel(
 
     fun saveEditor() {
         val editor = _state.value.editor ?: return
+        val current = _state.value
+        if (editor.itemId == null && !current.isProUnlocked &&
+            current.schedules.size >= FREE_SCHEDULE_LIMIT
+        ) {
+            return setEditorError(
+                "The free plan supports $FREE_SCHEDULE_LIMIT schedules. Unlock Clockwise Pro for unlimited alarms and reminders."
+            )
+        }
         val localDateTime = parseEditorLocalDateTime(editor)
             ?: return setEditorError("Enter the target date as YYYY-MM-DD and time as HH:MM.")
 
@@ -373,5 +424,9 @@ class HomeScreenViewModel(
 
     private fun newId(): String {
         return "${Clock.System.now().toEpochMilliseconds()}-${Random.nextLong().toString(16)}"
+    }
+
+    companion object {
+        const val FREE_SCHEDULE_LIMIT = 3
     }
 }

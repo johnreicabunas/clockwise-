@@ -9,7 +9,8 @@ data class WorldClockState(
     val editorError: String? = null,
     val isLoading: Boolean = true,
     val error: String? = null,
-    val isAdsRemoved: Boolean = false
+    val isAdsRemoved: Boolean = false,
+    val isProUnlocked: Boolean = false
 )
 
 enum class HomeMode {
@@ -17,7 +18,9 @@ enum class HomeMode {
     SCHEDULES,
     SUPPORT,
     EDITOR,
-    TIMEZONE_PICKER
+    TIMEZONE_PICKER,
+    PLANNER,
+    PERSONALIZE
 }
 
 data class ScheduleEditorState(

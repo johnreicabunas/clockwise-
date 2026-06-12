@@ -1,9 +1,11 @@
 package com.johnreicabunas.clockwise.data.local
 
 import android.content.Context
+import com.johnreicabunas.clockwise.platform.ClockwiseWidgetProvider
 
 class AndroidScheduleStorage(context: Context) : ScheduleStorage {
-    private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val preferences = appContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
     override suspend fun loadSchedulesJson(): String? {
         return preferences.getString(SCHEDULES_KEY, null)
@@ -11,6 +13,7 @@ class AndroidScheduleStorage(context: Context) : ScheduleStorage {
 
     override suspend fun saveSchedulesJson(json: String) {
         preferences.edit().putString(SCHEDULES_KEY, json).apply()
+        ClockwiseWidgetProvider.refresh(appContext)
     }
 
     private companion object {

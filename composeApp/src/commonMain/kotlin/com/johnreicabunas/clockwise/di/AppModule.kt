@@ -1,5 +1,6 @@
 package com.johnreicabunas.clockwise.di
 
+import com.johnreicabunas.clockwise.data.repository.AppearanceRepository
 import com.johnreicabunas.clockwise.data.repository.ScheduledItemRepositoryImpl
 import com.johnreicabunas.clockwise.data.repository.TimeZoneRepositoryImpl
 import com.johnreicabunas.clockwise.domain.repository.ScheduledItemRepository
@@ -15,6 +16,7 @@ import org.koin.dsl.module
 val appModule = module {
 
     singleOf(::TimeZoneRepositoryImpl).bind<TimeZoneRepository>()
+    singleOf(::AppearanceRepository)
     singleOf(::ScheduledItemRepositoryImpl).bind<ScheduledItemRepository>()
 
     factory { GetTimeZonesUseCase(get()) }
